@@ -1,1 +1,40 @@
+#First, we started by setting a working directory with which to upload and save data
+setwd("/Users/jamesburger/Library/CloudStorage/OneDrive-DukeUniversity/(4) Spring/Mental Health/R Code")
+#Downloading the necessary packages to upload data and graph data
+library(tidyverse)
+library(ggplot2)
+install.packages("readxl")
+library(readxl)
+
+#Importing CDC Data
+suicide.death <- read_excel("Suicide Deaths.xlsx")
+library(readxl)
+library(writexl)
+
+#Cleaning the original CDC data to remove lines giving total death counts by suicide#
+# Remove row(s) - example: removing row 2
+suicide.death <- suicide.death[-19, ]
+
+# Write back to an Excel file
+write_xlsx(suicide.death, "suicide.death.updated.xlsx")
+suicide.death.updated <- read_excel("suicide.death.updated.xlsx")
+
+
+#Creating a dot plot of suicide rates from 1999-2016
+suicide.year <- 
+  ggplot(suicide.death.updated, aes (x = Year, y = Deaths))+
+  geom_point()
+print(suicide.year)
+
+#Saving the plot
+ggsave("suicide.year.png", width = 8, height = 6, dpi = 300)
+
+#PART 2 - LOOKING AT CALL VOLUME
+install.packages("here")
+library(here)
+data988 <- read.csv(file = here("988data.csv"), stringsAsFactors = TRUE)
+
+#Calculating the total number of crisis line calls in 2021
+
+###[[[[[ADD]]]]]
 
