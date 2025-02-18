@@ -35,6 +35,12 @@ library(here)
 data988 <- read.csv(file = here("988data.csv"), stringsAsFactors = TRUE)
 
 #Calculating the total number of crisis line calls in 2021
+data988 <- filter(data988, year == 2021)
+
+total.call <- data988 %>%
+  summarise(total = sum(routed))
+print (total.call)
+#The result is 1004775
 
 ###[[[[[ADD]]]]]
 
