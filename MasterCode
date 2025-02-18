@@ -53,6 +53,29 @@ data988.2022.month <- data988.2022.month %>%
   mutate (Pre988Low = ifelse (in_state_answer_rate < 0.7, 1, 0))
 
 
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+
+# Assuming 'data988' is the data frame with the necessary columns, including 'in_state_answer_rate' and 'date'
+# Filter data to include only July 2021 to May 2024
+data_filtered <- filter(data988, year >= 2021 & year <= 2024 & month >= 7 & month <= 5)
+
+# Calculate the average in_state_answer_rate per month for each Pre988Low category
+avg_rate <- data_filtered %>%
+  group_by(date, Pre988Low) %>%
+  summarize(avg_answer_rate = mean(in_state_answer_rate, na.rm = TRUE)) %>%
+  ungroup()
+
+# Plot the data
+ggplot(avg_rate, aes(x = date, y = avg_answer_rate, color = factor(Pre988Low))) +
+  geom_line() +
+  labs(title = "Average In-State Answer Rate (July 2021 to May 2024)",
+       x = "Date", y = "Average In-State Answer Rate",
+       color = "Pre988Low") +
+  scale_color_manual(values = c("red", "blue"), labels = c("Poor Pre-Implementation", "Good Pre-Implementation")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
 
 
