@@ -35,12 +35,27 @@ library(here)
 data988 <- read.csv(file = here("988data.csv"), stringsAsFactors = TRUE)
 
 #Calculating the total number of crisis line calls in 2021
-data988 <- filter(data988, year == 2021)
+data988.2021 <- filter(data988, year == 2021)
 
-total.call <- data988 %>%
+total.call <- data988.2021 %>%
   summarise(total = sum(routed))
 print (total.call)
 #The result is 1004775
+
+
+#Creating a dummy variable to characterize states into high vs low answer rate states between January and April 2022
+#Filtering the dataframe to include only the observations between January and April 2022
+data988.2022 <- filter(data988, year == 2022)
+data988.2022.month <- filter(data988, month %in% c(1, 2, 3, 4))
+
+#Then creating a dummy variable
+data988.2022.month <- data988.2022.month %>%
+  mutate (Pre988Low = ifelse (in_state_answer_rate < 0.7, 1, 0))
+
+
+
+
+
 
 ###[[[[[ADD]]]]]
 
