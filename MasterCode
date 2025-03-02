@@ -43,40 +43,91 @@ print (total.call)
 #The result is 1004775
 
 
-#Creating a dummy variable to characterize states into high vs low answer rate states between January and April 2022
 #Filtering the dataframe to include only the observations between January and April 2022
 data988.2022 <- filter(data988, year == 2022)
-data988.2022.month <- filter(data988, month %in% c(1, 2, 3, 4))
+data988.2022.month <- filter(data988.2022, month %in% c(1, 2, 3, 4))
 
-#Then creating a dummy variable
-data988.2022.month <- data988.2022.month %>%
-  mutate (Pre988Low = ifelse (in_state_answer_rate < 0.7, 1, 0))
+#Calculating the average rate for each state's Jan-Apr 2022 in_state_answer_rate
+avg_answer_data988.2022 <- data988.2022.month %>%
+  group_by(statename) %>%
+  summarize(avg_answer_rate = mean(in_state_answer_rate, na.rm = TRUE))
 
+#Creating a dummy variable Pre988Low to characterize states into high vs low answer rate states between January and April 2022
+avg_answer_data988.2022 <- avg_answer_data988.2022 %>%
+  mutate (Pre988Low = ifelse (avg_answer_rate < 0.7, 1, 0))
 
-# Load necessary libraries
-library(ggplot2)
-library(dplyr)
+#Merging the dummy variable to the orginal dataset to categorize each state
+merged.data <- data988 %>%
+  left_join(avg_answer_data988.2022 %>% select (statename, Pre988Low), by = "statename")
 
-# Assuming 'data988' is the data frame with the necessary columns, including 'in_state_answer_rate' and 'date'
-# Filter data to include only July 2021 to May 2024
-data_filtered <- filter(data988, year >= 2021 & year <= 2024 & month >= 7 & month <= 5)
+#Calculating the average in_state_answer_rate for all states per month for each Pre988Low category
+monthly_grouped_avg <- merged.data %>%
+  group_by(month_year, Pre988Low) %>% 
+  summarize(mean_answer_rate = mean(in_state_answer_rate, na.rm = TRUE))
 
-# Calculate the average in_state_answer_rate per month for each Pre988Low category
-avg_rate <- data_filtered %>%
-  group_by(date, Pre988Low) %>%
-  summarize(avg_answer_rate = mean(in_state_answer_rate, na.rm = TRUE)) %>%
-  ungroup()
-
-# Plot the data
-ggplot(avg_rate, aes(x = date, y = avg_answer_rate, color = factor(Pre988Low))) +
+#Plotting the average in_state_answer_rate from July 2021 to May 2024 for the good and poor pre-implementation states
+Plot.States <- 
+  ggplot(monthly_grouped_avg, aes(x = month_year, y = mean_answer_rate, color = factor(Pre988Low), group = Pre988Low)) +
   geom_line() +
-  labs(title = "Average In-State Answer Rate (July 2021 to May 2024)",
-       x = "Date", y = "Average In-State Answer Rate",
-       color = "Pre988Low") +
-  scale_color_manual(values = c("red", "blue"), labels = c("Poor Pre-Implementation", "Good Pre-Implementation")) +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  scale_color_manual(values = c("0" = "blue", "1" = "red"), 
+                     labels = c("High Pre-988 Answer Rate", "Low Pre-988 Answer Rate")) +
+  scale_x_discrete(limits = c("Jul 2021","Aug 2021","Sep 2021", "Oct 2021","Nov 2021", "Dec 2021", "Jan 2022",
+                              "Feb 2022", "Mar 2022", "Apr 2022", "May 2022", "Jun 2022", "Jul 2022","Aug 2022",
+                              "Sep 2022", "Oct 2022","Nov 2022", "Dec 2022", "Jan 2023",
+                              "Feb 2023", "Mar 2023", "Apr 2023", "May 2023","Jun 2023", "Jul 2023","Aug 2023",
+                              "Sep 2023", "Oct 2023","Nov 2023", "Dec 2023", "Jan 2024",
+                              "Feb 2024", "Mar 2024", "Apr 2024", "May 2024"))+
+  labs(title = "Average In-State Answer Rate (July 2021 - May 2024)",
+       x = "Month",
+       y = "Average In-State Answer Rate",
+       color = "Pre-988 Answer Rate")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 
+print (Plot.States)
+
+
+#Saving the merged dataset
+install.packages("openxlsx")
+library(openxlsx)
+write.xlsx(merged.data, file = "Merged_Data.xlsx", rowNames = FALSE)
+
+#Loading necessary packages to read new excel dataset
+library(readxl)
+library(writexl)
+
+#Reading the new suicide death dataset
+deaths_file <- "Updated_Data_Death_2.xlsx"  
+deaths_data <- read_excel(deaths_file, sheet = 1)
+
+#Merging the dummy variable Pre988Low to the new suicide death dataset to categorize each state
+merged.death.data <- merged.data %>%
+  left_join(deaths_data %>% select(statename, month_year, Deaths), 
+            by = c("statename", "month_year"))
+
+
+#Calculating the average suicide death number for all states per month for each Pre988Low category
+monthly_death_avg <- merged.death.data %>%
+  group_by(month_year, Pre988Low) %>% 
+  summarize(ave.Deaths = mean(Deaths, na.rm = TRUE))
+
+#Plotting the average suicide number from July 2021 to May 2024 for the good and poor pre-implementation states
+Death.States <- 
+  ggplot(monthly_death_avg, aes(x = month_year, y = ave.Deaths, color = factor(Pre988Low), group = Pre988Low)) +
+  geom_line() +
+  scale_color_manual(values = c("0" = "blue", "1" = "red"), 
+                     labels = c("High Pre-988 Answer Rate", "Low Pre-988 Answer Rate")) +
+  scale_x_discrete(limits = c("Jul 2021","Aug 2021","Sep 2021", "Oct 2021","Nov 2021", "Dec 2021", "Jan 2022",
+                              "Feb 2022", "Mar 2022", "Apr 2022", "May 2022", "Jun 2022", "Jul 2022","Aug 2022",
+                              "Sep 2022", "Oct 2022","Nov 2022", "Dec 2022", "Jan 2023",
+                              "Feb 2023", "Mar 2023", "Apr 2023", "May 2023","Jun 2023", "Jul 2023","Aug 2023",
+                              "Sep 2023", "Oct 2023","Nov 2023", "Dec 2023", "Jan 2024",
+                              "Feb 2024", "Mar 2024", "Apr 2024", "May 2024"))+
+  labs(title = "Average Number of Suicide Deaths (July 2021 - May 2024)",
+       x = "Month",
+       y = "Average Number of Suicide Deaths",
+       color = "Pre-988 Answer Rate")+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+print (Death.States)
 
 
 
