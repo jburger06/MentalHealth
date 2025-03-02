@@ -56,7 +56,7 @@ avg_answer_data988.2022 <- data988.2022.month %>%
 avg_answer_data988.2022 <- avg_answer_data988.2022 %>%
   mutate (Pre988Low = ifelse (avg_answer_rate < 0.7, 1, 0))
 
-#Merging the dummy variable to the orginal dataset to categorize each state
+#Merging the dummy variable to the original dataset to categorize each state
 merged.data <- data988 %>%
   left_join(avg_answer_data988.2022 %>% select (statename, Pre988Low), by = "statename")
 
