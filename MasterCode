@@ -96,17 +96,21 @@ library(readxl)
 library(writexl)
 
 #Reading the new suicide death dataset
-deaths_file <- "Updated_Data_Death_2.xlsx"  
-deaths_data <- read_excel(deaths_file, sheet = 1)
+deaths_file <- "Death_Data.xls"  
+New_deaths_data <- read_excel(deaths_file, sheet = 1)
 
-#Merging the dummy variable Pre988Low to the new suicide death dataset to categorize each state
-merged.death.data <- merged.data %>%
-  left_join(deaths_data %>% select(statename, month_year, Deaths), 
-            by = c("statename", "month_year"))
+#Wrangling the month and the month code in the dataset
+New_deaths_data$Month <- as.numeric(substring(New_deaths_data$`Month Code`, 6,7))
 
+#Adding the state abbreviations to the dataset
+states <- cbind(state.name, state.abb)
+New_deaths_data <- merge(New_deaths_data, states, by.x="State", by.y="state.name", all.x=T)
+
+#Combining the suicide dataset with the state answer rate dataset
+combined_new <- merge(merged.data, New_deaths_data, by.x=c("statename", "year", "month"), by.y=c("state.abb", "Year", "Month"))
 
 #Calculating the average suicide death number for all states per month for each Pre988Low category
-monthly_death_avg <- merged.death.data %>%
+monthly_death_avg <- combined_new %>%
   group_by(month_year, Pre988Low) %>% 
   summarize(ave.Deaths = mean(Deaths, na.rm = TRUE))
 
@@ -128,7 +132,6 @@ Death.States <-
        color = "Pre-988 Answer Rate")+
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 print (Death.States)
-
 
 
 ###[[[[[ADD]]]]]
