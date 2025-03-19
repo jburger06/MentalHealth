@@ -134,5 +134,54 @@ Death.States <-
 print (Death.States)
 
 
+
+
+##################DiD: We now want to create a NormalizedMonth Category
+# Ensure Date column exists
+merged.data$Date <- as.Date(paste(merged.data$year, merged.data$month, "01", sep = "-"))
+
+# Create NormalizedMonth (1 = July 2021, 13 = July 2022, ..., 35 = May 2024)
+merged.data$NormalizedMonth <- as.numeric(format(merged.data$Date, "%Y")) * 12 +
+  as.numeric(format(merged.data$Date, "%m")) -
+  (2021 * 12 + 7) + 1
+
+# Make it a categorical (factor) variable with July 2022 as reference (i.e., 13)
+merged.data$NormalizedMonth <- factor(merged.data$NormalizedMonth)
+merged.data$NormalizedMonth <- relevel(merged.data$NormalizedMonth, ref = "13")
+
+#Repeating this step for combined_new
+combined_new$Date <- as.Date(paste(combined_new$year, combined_new$month, "01", sep = "-"))
+combined_new$NormalizedMonth <- as.numeric(format(combined_new$Date, "%Y")) * 12 +
+  as.numeric(format(combined_new$Date, "%m")) -
+  (2021 * 12 + 7) + 1
+combined_new$NormalizedMonth <- factor(combined_new$NormalizedMonth)
+combined_new$NormalizedMonth <- relevel(combined_new$NormalizedMonth, ref = "13")
+
+#Estimating the regression for Answered calls
+install.packages("fixest")
+library(fixest)
+model.calls <- feols(routed ~ i(NormalizedMonth, Pre988Low, ref = "13") | statename + month_year, data = merged.data)
+
+#Estimating the regression for Suicide deaths
+model.deaths <- feols(Deaths ~ i(NormalizedMonth, Pre988Low, ref = "13") | statename + month_year, data = combined_new)
+
+#Now that the regressions are run, we will plot the event-study coefficients with confidence intervals
+# Load plotting tools
+library(fixest)
+
+# Plot for 988 Answered Calls
+iplot(model.calls,
+      main = "Event Study: Effect of 988 on Answered Calls",
+      xlab = "Months Since July 2021",
+      ylab = "Difference in Answered Calls\n(Low vs High Pre-988 States)",
+      ref.line = 13)
+
+# Plot for Suicide Deaths
+iplot(model.deaths,
+      main = "Event Study: Effect of 988 on Suicide Deaths",
+      xlab = "Months Since July 2021",
+      ylab = "Difference in Suicide Deaths\n(Low vs High Pre-988 States)",
+      ref.line = 13)
+
 ###[[[[[ADD]]]]]
 
