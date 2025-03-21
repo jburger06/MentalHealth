@@ -204,5 +204,12 @@ print (upper_interval_death)
 lower_interval_death <- 0.114424 - 1.96*1.07917
 print (lower_interval_death)
 
+#Q11 
+#Calculating the average number of calls
+mean (merged.data$answered_in_state)
+##Calculating the average number of suicide deaths
+mean (combined_new$Deaths)
+
+
 ###[[[[[ADD]]]]]
 
