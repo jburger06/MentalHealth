@@ -207,7 +207,7 @@ print (lower_interval_death)
 #Q11 
 #Calculating the average number of calls
 mean (merged.data$answered_in_state)
-##Calculating the average number of suicide deaths
+#Calculating the average number of suicide deaths
 mean (combined_new$Deaths)
 
 
