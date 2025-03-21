@@ -133,9 +133,6 @@ Death.States <-
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 print (Death.States)
 
-
-
-
 ##################DiD: We now want to create a NormalizedMonth Category
 # Ensure Date column exists
 merged.data$Date <- as.Date(paste(merged.data$year, merged.data$month, "01", sep = "-"))
@@ -145,9 +142,9 @@ merged.data$NormalizedMonth <- as.numeric(format(merged.data$Date, "%Y")) * 12 +
   as.numeric(format(merged.data$Date, "%m")) -
   (2021 * 12 + 7) + 1
 
-# Make it a categorical (factor) variable with July 2022 as reference (i.e., 13)
+# Make it a categorical (factor) variable with June 2022 as reference (i.e., 12)
 merged.data$NormalizedMonth <- factor(merged.data$NormalizedMonth)
-merged.data$NormalizedMonth <- relevel(merged.data$NormalizedMonth, ref = "13")
+merged.data$NormalizedMonth <- relevel(merged.data$NormalizedMonth, ref = "12")
 
 #Repeating this step for combined_new
 combined_new$Date <- as.Date(paste(combined_new$year, combined_new$month, "01", sep = "-"))
@@ -155,33 +152,57 @@ combined_new$NormalizedMonth <- as.numeric(format(combined_new$Date, "%Y")) * 12
   as.numeric(format(combined_new$Date, "%m")) -
   (2021 * 12 + 7) + 1
 combined_new$NormalizedMonth <- factor(combined_new$NormalizedMonth)
-combined_new$NormalizedMonth <- relevel(combined_new$NormalizedMonth, ref = "13")
+combined_new$NormalizedMonth <- relevel(combined_new$NormalizedMonth, ref = "12")
 
 #Estimating the regression for Answered calls
+# Load plotting tools
 install.packages("fixest")
 library(fixest)
-model.calls <- feols(routed ~ i(NormalizedMonth, Pre988Low, ref = "13") | statename + month_year, data = merged.data)
-
-#Estimating the regression for Suicide deaths
-model.deaths <- feols(Deaths ~ i(NormalizedMonth, Pre988Low, ref = "13") | statename + month_year, data = combined_new)
-
-#Now that the regressions are run, we will plot the event-study coefficients with confidence intervals
-# Load plotting tools
-library(fixest)
+model.calls <- feols(answered_in_state ~ i(NormalizedMonth, Pre988Low, ref = "12") | statename + month_year, data = merged.data)
+coef_calls <- c(coef(model.calls)[1:11],0,coef(model.calls)[12:34])
+se_calls <- c(model.calls$se[1:11],0,model.calls$se[12:34])
 
 # Plot for 988 Answered Calls
-iplot(model.calls,
-      main = "Event Study: Effect of 988 on Answered Calls",
-      xlab = "Months Since July 2021",
-      ylab = "Difference in Answered Calls\n(Low vs High Pre-988 States)",
-      ref.line = 13)
+plot(y=coef_calls, x=1:35, xaxt="n", ylim=c(-2000,5000), pch=19, xlab = "Months Since July 2021",
+     ylab = "Average State Answered Calls", main = "Event Study: Effect of 988 on Answered Calls")
+arrows(x0=1:35, y0=coef_calls-1.96*se_calls, y1=coef_calls+1.96*se_calls, length=0)
+abline(v=12.5, col="red")
+abline(h=0)
+axis(1, at = c(1, 13, 25, 35), labels = c("Jul 2021", "Jul 2022", "Jul 2023", "May 2024"))
+
+#Estimating the regression for Suicide Deaths
+model.deaths <- feols(Deaths ~ i(NormalizedMonth, Pre988Low, ref = "12") | statename + month_year, data = combined_new)
+coef_deaths <- c(coef(model.deaths)[1:11],0,coef(model.deaths)[12:34])
+se_deaths <- c(model.deaths$se[1:11],0,model.deaths$se[12:34])
 
 # Plot for Suicide Deaths
-iplot(model.deaths,
-      main = "Event Study: Effect of 988 on Suicide Deaths",
-      xlab = "Months Since July 2021",
-      ylab = "Difference in Suicide Deaths\n(Low vs High Pre-988 States)",
-      ref.line = 13)
+plot(y=coef_deaths, x=1:35, xaxt="n", ylim=c(-20,40), pch=19, xlab = "Months Since July 2021",
+     ylab = "Average Suicide Death Numbers", main = "Event Study: Effect of 988 on Suicide Deaths")
+arrows(x0=1:35, y0=coef_deaths-1.96*se_deaths, y1=coef_deaths+1.96*se_deaths, length=0)
+abline(v=12.5, col="red")
+abline(h=0)
+axis(1, at = c(1, 13, 25, 35), labels = c("Jul 2021", "Jul 2022", "Jul 2023", "May 2024"))
+
+#Reporting the DiD estimate
+##Getting the summary table and the coefficient for State answer rate
+merged.data$Post <- as.numeric(as.character(merged.data$NormalizedMonth))>=13
+summary(feols(answered_in_state ~ Pre988Low*Post| statename + month_year, data = merged.data))
+#Calculating the upper interval
+upper_interval_call <- 1594.57 + 1.96*733.446
+print (upper_interval_call)
+#Calculating the lower interval
+lower_interval_call <- 1594.57 - 1.96*733.446
+print (lower_interval_call)
+
+##Getting the summary table and the coefficient for Suicide Deaths
+combined_new$Post <- as.numeric(as.character(combined_new$NormalizedMonth))>=13
+summary(feols(Deaths ~ Pre988Low*Post| statename + month_year, data = combined_new))
+#Calculating the upper interval
+upper_interval_death <- 0.114424 + 1.96*1.07917
+print (upper_interval_death)
+#Calculating the lower interval
+lower_interval_death <- 0.114424 - 1.96*1.07917
+print (lower_interval_death)
 
 ###[[[[[ADD]]]]]
 
