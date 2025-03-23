@@ -42,7 +42,6 @@ total.call <- data988.2021 %>%
 print (total.call)
 #The result is 1004775
 
-
 #Filtering the dataframe to include only the observations between January and April 2022
 data988.2022 <- filter(data988, year == 2022)
 data988.2022.month <- filter(data988.2022, month %in% c(1, 2, 3, 4))
@@ -109,6 +108,7 @@ New_deaths_data <- merge(New_deaths_data, states, by.x="State", by.y="state.name
 #Combining the suicide dataset with the state answer rate dataset
 combined_new <- merge(merged.data, New_deaths_data, by.x=c("statename", "year", "month"), by.y=c("state.abb", "Year", "Month"))
 
+
 #Calculating the average suicide death number for all states per month for each Pre988Low category
 monthly_death_avg <- combined_new %>%
   group_by(month_year, Pre988Low) %>% 
@@ -163,21 +163,25 @@ coef_calls <- c(coef(model.calls)[1:11],0,coef(model.calls)[12:34])
 se_calls <- c(model.calls$se[1:11],0,model.calls$se[12:34])
 
 # Plot for 988 Answered Calls
+par (mar = c(6,6,4,2))
+
 plot(y=coef_calls, x=1:35, xaxt="n", ylim=c(-2000,5000), pch=19, xlab = "Months Since July 2021",
-     ylab = "Average State Answered Calls", main = "Event Study: Effect of 988 on Answered Calls")
+     ylab = "The Interaction Term Coefficient\nfor the State Answered Rate Regression Model", main = "Event Study: Effect of 988 on Answered Calls")
 arrows(x0=1:35, y0=coef_calls-1.96*se_calls, y1=coef_calls+1.96*se_calls, length=0)
 abline(v=12.5, col="red")
 abline(h=0)
 axis(1, at = c(1, 13, 25, 35), labels = c("Jul 2021", "Jul 2022", "Jul 2023", "May 2024"))
 
 #Estimating the regression for Suicide Deaths
-model.deaths <- feols(Deaths ~ i(NormalizedMonth, Pre988Low, ref = "12") | statename + month_year, data = combined_new)
+model.deaths <- feols(Deaths ~ i(NormalizedMonth, Pre988Low, ref = "12") | 
+                        statename + month_year, data = combined_new)
 coef_deaths <- c(coef(model.deaths)[1:11],0,coef(model.deaths)[12:34])
 se_deaths <- c(model.deaths$se[1:11],0,model.deaths$se[12:34])
 
 # Plot for Suicide Deaths
 plot(y=coef_deaths, x=1:35, xaxt="n", ylim=c(-20,40), pch=19, xlab = "Months Since July 2021",
-     ylab = "Average Suicide Death Numbers", main = "Event Study: Effect of 988 on Suicide Deaths")
+     ylab = "The Interaction Term Coefficient\nfor the Suicide Death Regression Model", 
+     main = "Event Study: Effect of 988 on Suicide Deaths")
 arrows(x0=1:35, y0=coef_deaths-1.96*se_deaths, y1=coef_deaths+1.96*se_deaths, length=0)
 abline(v=12.5, col="red")
 abline(h=0)
@@ -207,7 +211,7 @@ print (lower_interval_death)
 #Q11 
 #Calculating the average number of calls
 mean (merged.data$answered_in_state)
-#Calculating the average number of suicide deaths
+##Calculating the average number of suicide deaths
 mean (combined_new$Deaths)
 
 
